@@ -99,19 +99,25 @@ jobs:
           done
           echo "═══════════════════════════════════════════════════════"
 
-          # 写入 Summary 页面，用户直接在 Summary 即可看到扫码链接
+          # 写入 Summary 页面：内嵌二维码图片（直接可见）+ 备用链接
           {
             echo "## 🎵 酷狗音乐扫码登录"
             echo ""
-            echo "请点击下方链接，浏览器打开即可扫码（约 2 分钟内有效）："
+            echo "下方为二维码（约 2 分钟内有效），直接用「酷狗音乐 APP」扫码："
             echo ""
             for f in qr/*.png; do
-              echo "- 🔗 [账号 $(basename "$f" .png | sed 's/qr-//')] https://github.com/${{ github.repository }}/releases/download/$TAG/$(basename "$f")"
+              N="$(basename "$f" .png | sed 's/qr-//')"
+              URL="https://github.com/${{ github.repository }}/releases/download/$TAG/$(basename "$f")"
+              echo "### 账号 $N"
+              echo ""
+              echo "![账号 $N]($URL)"
+              echo ""
+              echo "🔗 备用链接：$URL"
+              echo ""
             done
-            echo ""
             echo "🌐 [HTML 登录页（含所有二维码）](https://github.com/${{ github.repository }}/releases/download/$TAG/login.html)"
             echo ""
-            echo "⏳ 二维码有效期约 2 分钟，请尽快扫描"
+            echo "⏳ 二维码有效期约 2 分钟，请在运行结束后尽快扫描（图片能打开即代表链接有效）"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # ═══ 备用：HTML 仍上传为 artifact（万一 Release 失败兜底）═══
@@ -149,16 +155,10 @@ jobs:
           PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
 
-      # ═══ 清理：登录完成后立即删除本次 Release 及同名 Tag（不堆积）═══
-      - name: 清理本次二维码 Release 及 Tag
-        if: ${{ always() && steps.publish.outcome == 'success' }}
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="qr-${{ github.run_id }}"
-          gh release delete "$TAG" --cleanup-tag --repo "$GITHUB_REPOSITORY" -y 2>/dev/null \
-            && echo "✅ 已删除本次 Release 及 Tag: $TAG" || echo "⚠️ Release/Tag $TAG 不存在或已删除"
+      # ═══ 保留本次 Release：不再立即删除，确保二维码直链在运行结束后仍可访问 ═══
+      #   说明：二维码本身约 2 分钟内有效（酷狗服务端限制），运行结束后图片虽仍可打开，
+      #   但已不可扫码；保留 Release 是为了避免「运行一结束链接就 404」导致看不到二维码。
+      #   历史旧 Release 由下方「保留最近 3 个」步骤统一清理，不会无限堆积。
 
       # ═══ 兜底：清理残留的旧二维码 Release（保留最近 3 个）═══
       - name: 清理旧的二维码 Release 及 Tag
