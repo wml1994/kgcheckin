@@ -6,6 +6,8 @@ on:
 permissions:
   contents: read
   actions: write
+  # 用 GITHUB_TOKEN 将刷新后的登录信息写回 USERINFO Secret
+  secrets: write
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -34,7 +36,9 @@ jobs:
         run: npm run main
         env:
           USERINFO: ${{ secrets.USERINFO }}
-          PAT: ${{ secrets.PAT }}
+          # 用自带的 GITHUB_TOKEN 写回刷新后的 USERINFO（需上方 permissions: secrets: write）
+          # 不再依赖外部 PAT Secret，避免 PAT 值含非法字符导致授权头报错
+          GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           # 通知渠道（按需配置，全部可选）
           WECOM_BOT_KEY: ${{ secrets.WECOM_BOT_KEY }}
