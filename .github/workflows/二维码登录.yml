@@ -23,10 +23,9 @@ on:
           - 否
           - 是
 # 需要 contents: write 才能创建 Release 上传二维码直链
-# 需要 secrets: write 才能用 GITHUB_TOKEN 将登录信息写回 USERINFO Secret（免去额外维护 PAT）
+# 注意: 写回 USERINFO Secret 必须用 PAT（GITHUB_TOKEN 无权写 Secrets，且 permissions 无 secrets 键）
 permissions:
   contents: write
-  secrets: write
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -156,9 +155,8 @@ jobs:
           USERINFO: ${{ secrets.USERINFO }}
           APPEND_USER: ${{ github.event.inputs.append_user }}
           ALLOW_PRINT_USERINFO: ${{ github.event.inputs.print_userinfo }}
-          # 用自带的 GITHUB_TOKEN 写回 USERINFO Secret（需上方 permissions: secrets: write）
-          # 不再依赖外部 PAT Secret，避免 PAT 值含非法字符导致授权头报错
-          GH_TOKEN: ${{ github.token }}
+          # 写回 USERINFO Secret 用 PAT（需在仓库 Secrets 配置干净的 token，单行、无空格换行）
+          PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
 
       # ═══ 保留本次 Release：不再立即删除，确保二维码直链在运行结束后仍可访问 ═══
