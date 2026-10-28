@@ -87,6 +87,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="qr-${{ github.run_id }}"
+          # 幂等处理：重跑同一次运行时 run_id 不变，同名 Release/Tag 可能已存在，先删再建
+          gh release delete "$TAG" --cleanup-tag --repo "$GITHUB_REPOSITORY" -y 2>/dev/null || true
           gh release create "$TAG" qr/*.png qr/login.html \
             --repo "$GITHUB_REPOSITORY" \
             --title "酷狗扫码登录二维码" \
